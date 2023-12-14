@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Metrics Dashboard</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Arial', sans-serif; padding: 20px; background-color: #f8f9fa; }
+        h1 { color: #343a40; margin-bottom: 20px; }
+        .container { margin-top: 20px; }
+        .card { margin-bottom: 20px; border: 1px solid #dee2e6; border-radius: 10px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+        .card-header { background-color: #007bff; color: #fff; border-bottom: 1px solid #dee2e6; border-top-left-radius: 10px; border-top-right-radius: 10px; padding: 10px 15px; }
+        .card-body { padding: 20px; }
+        canvas { max-width: 100%; }
+        .alert { margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1 class="text-center">System Metrics Dashboard</h1>
+
+        <!-- Number of Data Entries -->
+        <div class="alert alert-info" role="alert">
+            Number of Data Entries: {{ metrics_data|length }}
+        </div>
+
+        <!-- Number of Photos Captured -->
+        <div class="alert alert-warning" role="alert">
+            Number of Photos Captured: {{ metrics_data[-1].camera_photo|length }}
+        </div>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>User ID</th>
+                    <th>Timestamp</th>
+                    <th>Platform</th>
+                    <th>Processor</th>
+                    <th>Mac Address</th>
+                    <th>IP Address</th>
+                    <th>CPU Usage</th>
+                    <th>Memory Usage</th>
+                    <th>Storage Capacity</th>
+                    <th>Storage Usage</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for data in metrics_data %}
+                    <tr>
+                        <td>{{ data.user_id }}</td>
+                        <td>{{ data.timestamp }}</td>
+                        <td>{{ data.platform }}</td>
+                        <td>{{ data.processor }}</td>
+                        <td>{{ data.mac_address }}</td>
+                        <td>{{ data.ip_address }}</td>
+                        <td>{{ data.cpu_usage }}</td>
+                        <td>{{ data.memory_usage }}</td>
+                        <td>{{ data.storage_capacity }}</td>
+                        <td>{{ data.storage_usage }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="row">
+            <!-- CPU Usage Card -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>CPU Usage</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="cpuChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Memory Usage Card -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Memory Usage</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="memoryChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Storage Usage Card -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Storage Usage</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="storageChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- WiFi Info Card -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>WiFi Info</h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Add visualization for WiFi info here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Web History Card -->
+        <div class="card">
+            <div class="card-header">
+                <h5>Web History</h5>
+            </div>
+            <div class="card-body">
+                <ul>
+                    {% for entry in metrics_data[-1].web_history %}
+                        <li>{{ entry }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var metrics_data = {{ metrics_data|tojson }};
+
+        // Draw pie charts
+        var cpuChartCanvas = document.getElementById('cpuChart').getContext('2d');
+        var memoryChartCanvas = document.getElementById('memoryChart').getContext('2d');
+        var storageChartCanvas = document.getElementById('storageChart').getContext('2d');
+
+        drawPieChart('CPU Usage', cpuChartCanvas, metrics_data[-1].cpu_usage);
+        drawPieChart('Memory Usage', memoryChartCanvas, metrics_data[-1].memory_usage);
+        drawPieChart('Storage Usage', storageChartCanvas, metrics_data[-1].storage_usage);
+
+        function drawPieChart(label, canvas, value) {
+            new Chart(canvas, {
+                type: 'doughnut',
+                data: {
+                    labels: [`${label}: ${value.toFixed(2)}%`, 'Free'],
+                    datasets: [{
+                        data: [value, 100 - value],
+                        backgroundColor: ['#FFCE56', '#4BC0C0'],
+                    }],
+                },
+                options: {
+                    title: {
+                        display: true,
+                        text: label,
+                        fontSize: 18,
+                        fontColor: '#333',
+                    },
+                    legend: {
+                        display: true,
+                        position: 'bottom',
+                        labels: {
+                            fontColor: '#333',
+                        },
+                    },
+                },
+            });
+        }
+    </script>
+</body>
+
+</html>
